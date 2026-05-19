@@ -1,6 +1,6 @@
 # OneEvents
 
-Events feed over WebSocket for the One backend.
+Events feed over WebSocket.
 
 `OneWireFormat.WSString.Event` is the single envelope for incoming JSON objects. `OneEvents`
 keeps WebSocket lifecycle, subscriptions, typed dispatch, and UI-facing state adapters in one
@@ -17,7 +17,7 @@ package without adding another envelope layer.
 
 ```swift
 let dispatcher = EventDispatcher()
-let watcher = EventsWatcher(request: request, requestAdapter: adapter, dispatcher: dispatcher)
+let watcher = try EventsWatcher(baseURL: baseURL, requestAdapter: adapter, dispatcher: dispatcher)
 let monitor = EventsMonitor(watcher: watcher, dispatcher: dispatcher)
 let feed = EventFeed(capacity: 100)
 
@@ -34,6 +34,31 @@ try await watcher.watch(
 await watcher.setActive(scenePhase == .active)
 ```
 
-`OneAccountDemo` integration is intentionally left for the next step: add the package dependency,
-create the watcher/dispatcher pair at the app runtime level, bind `Env` adapters to UI state, and
-forward `scenePhase` to `EventsWatcher.setActive(_:)`.
+## Integration in app preparation
+
+Create the watcher at the account runtime level and pass the runtime endpoint URL plus the auth
+request adapter from the account layer:
+
+```swift
+let dispatcher = EventDispatcher()
+let baseURL = await runtime.account.endpoint.url
+let adapter = /* request adapter from AccountRuntime/auth layer */
+let watcher = try EventsWatcher(baseURL: baseURL, requestAdapter: adapter, dispatcher: dispatcher)
+
+let monitor = EventsMonitor(watcher: watcher, dispatcher: dispatcher)
+let feed = EventFeed(capacity: 100)
+
+feed.bind(dispatcher)
+monitor.start()
+await watcher.start()
+```
+
+Forward SwiftUI `scenePhase` changes to `EventsWatcher.setActive(_:)`. The watcher keeps desired
+subscriptions while inactive and replays them after the next connection.
+
+## Integration Test
+
+The long-read WebSocket integration test is opt-in. Rename `.env.sample` to `.env` and put values in.
+
+Without these values, `swift test` runs the offline tests and reports that the integration test is
+not configured.

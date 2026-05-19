@@ -3,6 +3,8 @@ import HTTP
 import WS
 import Logging
 import OneWireFormat
+import RequestResponse
+import URLKit
 
 /// Client-side wrapper for the One `/events` WebSocket feed.
 public actor EventsWatcher {
@@ -16,6 +18,13 @@ public actor EventsWatcher {
     private var readTask: Task<Void, Never>?
     private var connectTask: Task<Void, Never>?
     private var shouldBeActive = false
+
+    /// Creates an events watcher for the `/events` WebSocket endpoint under the provided base URL.
+    public init(baseURL: URL, requestAdapter: RequestAdapter, dispatcher: EventDispatcher) throws {
+        let builder = RequestBuilder.json(baseURL: baseURL, encoder: JSONEncoder())
+        let url = try builder.url(for: EventsApi.feed()).wsURL
+        self.init(request: URLRequest(url: url), requestAdapter: requestAdapter, dispatcher: dispatcher)
+    }
 
     /// Creates an events watcher around a configured WebSocket request.
     public init(request: URLRequest, requestAdapter: RequestAdapter, dispatcher: EventDispatcher) {
