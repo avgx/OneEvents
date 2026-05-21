@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import Logging
 import WS
 
 /// UI-ready snapshot of the events subsystem state.
@@ -64,6 +65,7 @@ public final class EventsMonitor: ObservableObject {
     private let watcher: EventsWatcher
     private let dispatcher: EventDispatcher
     private let snapshotIntervalNanoseconds: UInt64
+    private let logger = Logger(label: "events.monitor")
     private var tasks: [Task<Void, Never>] = []
 
     /// Creates an events monitor for a watcher and dispatcher pair.
@@ -88,6 +90,7 @@ public final class EventsMonitor: ObservableObject {
     /// Starts observing events, diagnostics, connection state, and transport metrics.
     public func start() {
         guard tasks.isEmpty else { return }
+        logger.info("monitoring started")
 
         tasks.append(Task { [weak self] in
             guard let self else { return }
@@ -128,6 +131,7 @@ public final class EventsMonitor: ObservableObject {
             task.cancel()
         }
         tasks.removeAll()
+        logger.info("monitoring stopped")
     }
 
     /// Refreshes transport byte counters and connection state immediately.
@@ -137,22 +141,26 @@ public final class EventsMonitor: ObservableObject {
         state.isConnected = Self.isConnected(snapshot.state)
         state.bytesSent = snapshot.sent
         state.bytesReceived = snapshot.received
+        logger.debug("transport sent=\(snapshot.sent) received=\(snapshot.received) state=\(String(describing: snapshot.state))")
     }
 
     private func recordEvent(type: String) {
         state.eventsReceived += 1
         state.eventsByType[type, default: 0] += 1
         state.lastEventAt = Date()
+        logger.debug("event type=\(type) total=\(self.state.eventsReceived)")
     }
 
     private func recordIssue(_ issue: EventDecodingIssue) {
         state.decodeErrors += 1
         state.lastError = "\(issue.type): \(issue.message)"
+        logger.error("decode \(issue.type): \(issue.message)")
     }
 
     private func recordConnectionState(_ connectionState: WebSocket.State) {
         state.connectionState = String(describing: connectionState)
         state.isConnected = Self.isConnected(connectionState)
+        logger.info("WS state: \(String(describing: connectionState))")
     }
 
     private static func isConnected(_ connectionState: WebSocket.State) -> Bool {
