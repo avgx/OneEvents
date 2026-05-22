@@ -1,10 +1,10 @@
 import SwiftUI
 
-/// Observable store for camera arm states keyed by access point.
+/// Observable store for device states keyed by access point.
 @MainActor
-public final class CameraArmManager: ObservableObject {
+public final class DeviceStateManager: ObservableObject {
     /// Latest arm state by camera access point.
-    @Published public private(set) var states: [AccessPoint: CameraArmState?] = [:]
+    @Published public private(set) var states: [AccessPoint: DeviceState?] = [:]
 
     private var task: Task<Void, Never>?
 
@@ -16,17 +16,17 @@ public final class CameraArmManager: ObservableObject {
     }
 
     /// Binds this manager to camera arm updates published by the dispatcher.
-    public func bindCameraArmChannel(_ dispatcher: EventDispatcher) {
+    public func bindCameraRecordStateChannel(_ dispatcher: EventDispatcher) {
         task?.cancel()
         task = Task { @MainActor in
-            let stream = await dispatcher.cameraArmEvents()
+            let stream = await dispatcher.deviceStateEvents()
             for await update in stream {
                 apply(update)
             }
         }
     }
 
-    private func apply(_ update: CameraArmStateEvent) {
-        states[update.source] = update.state.value
+    private func apply(_ update: DeviceStateChangedEvent) {
+        states[update.name] = update.state
     }
 }

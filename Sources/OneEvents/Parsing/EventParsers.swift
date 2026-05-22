@@ -5,10 +5,9 @@ import OneWireFormat
 /// Parses typed event DTOs from `OneWireFormat.WSString.Event` envelopes.
 public enum EventParsers {
     /// Parses a camera arm-state update when the wire event type matches.
-    public static func cameraArm(_ event: OneWireFormat.WSString.Event, decoder: JSONDecoder = JSONDecoder()) throws -> CameraArmUpdate? {
+    public static func cameraArm(_ event: OneWireFormat.WSString.Event, decoder: JSONDecoder = JSONDecoder()) throws -> CameraArmStateEvent? {
         guard event.eventType == .cameraArmState else { return nil }
-        let dto = try decoder.decode(CameraArmStateEvent.self, from: event.raw)
-        return CameraArmUpdate(source: dto.source, state: dto.state, timestamp: dto.timestamp)
+        return try decoder.decode(CameraArmStateEvent.self, from: event.raw)
     }
 
     /// Decodes a detector event when the wire event type matches.

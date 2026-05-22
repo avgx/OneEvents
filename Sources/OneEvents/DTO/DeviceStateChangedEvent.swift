@@ -1,13 +1,15 @@
 import Foundation
 import OneWireFormat
 
+public typealias DeviceState = String
+
 /// Device state event emitted as `devicestatechanged`.
 public struct DeviceStateChangedEvent: Codable, Sendable, Equatable {
     /// Wire event type. Expected to be `devicestatechanged`.
     public let type: String
 
     /// Server state string. Values vary by server version and localization.
-    public let state: String
+    public let state: DeviceState
 
     /// Device or camera access point.
     public let name: AccessPoint

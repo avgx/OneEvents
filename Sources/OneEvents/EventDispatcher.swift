@@ -5,7 +5,7 @@ import OneWireFormat
 /// Routes wire events into typed streams and custom handlers.
 public actor EventDispatcher {
     private let eventsHub = Hub<OneWireFormat.WSString.Event>()
-    private let cameraArmHub = Hub<CameraArmUpdate>()
+    private let cameraArmHub = Hub<CameraArmStateEvent>()
     private let detectorHub = Hub<DetectorEvent>()
     private let deviceStateHub = Hub<DeviceStateChangedEvent>()
     private let cameraRecordStateHub = Hub<CameraRecordStateEvent>()
@@ -25,7 +25,7 @@ public actor EventDispatcher {
     }
 
     /// Subscribes to camera arm-state updates.
-    public func cameraArmUpdates() async -> AsyncStream<CameraArmUpdate> {
+    public func cameraArmEvents() async -> AsyncStream<CameraArmStateEvent> {
         await cameraArmHub.subscribe()
     }
 

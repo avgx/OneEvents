@@ -1,5 +1,6 @@
 import Foundation
 import OneWireFormat
+import SafeEnum
 
 /// Camera arming state event emitted as `cameraarmstateevent`.
 public struct CameraArmStateEvent: Codable, Sendable, Equatable {
@@ -10,7 +11,7 @@ public struct CameraArmStateEvent: Codable, Sendable, Equatable {
     public let type: String
 
     /// New camera arming state.
-    public let state: CameraArmState
+    public let state: SafeEnum<CameraArmState>
 
     /// Camera access point.
     public let source: AccessPoint
