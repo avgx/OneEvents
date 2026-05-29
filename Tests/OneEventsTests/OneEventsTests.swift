@@ -75,7 +75,7 @@ private let unknownPacket = """
 
     let cameraArm = try #require(try decodeFirst(cameraArmPacket))
     let armUpdate = try #require(try EventParsers.cameraArm(cameraArm))
-    #expect(armUpdate.state == .arm)
+    #expect(armUpdate.state.value == .arm)
 
     let objectActivated = try #require(try decodeFirst(objectActivatedPacket))
     let activation = try #require(try EventParsers.objectActivated(objectActivated))

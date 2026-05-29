@@ -19,7 +19,7 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/avgx/OneWireFormat.git", branch: "main"),
+        .package(url: "https://github.com/avgx/OneWireFormat.git", from: "1.0.2"),
         .package(url: "https://github.com/avgx/RequestResponse.git", from: "2.0.0"),
         .package(url: "https://github.com/avgx/URLKit.git", from: "1.0.0"),
         .package(url: "https://github.com/avgx/JSONValue.git", from: "1.0.1"),
