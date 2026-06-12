@@ -24,7 +24,7 @@ let package = Package(
         .package(url: "https://github.com/avgx/URLKit.git", from: "1.0.0"),
         .package(url: "https://github.com/avgx/JSONValue.git", from: "1.0.1"),
         .package(url: "https://github.com/avgx/SafeEnum.git", from: "1.0.0"),
-        .package(url: "https://github.com/avgx/Get.git", branch: "dev"),
+        .package(url: "https://github.com/avgx/Get.git", from: "6.0.0"),
     ],
     targets: [
         .target(
