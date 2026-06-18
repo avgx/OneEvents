@@ -5,6 +5,7 @@ import Logging
 import OneWireFormat
 import RequestResponse
 import URLKit
+import SSLPinning
 
 /// Client-side wrapper for the One `/events` WebSocket feed.
 public actor EventsWatcher {
@@ -20,22 +21,42 @@ public actor EventsWatcher {
     private var shouldBeActive = false
 
     /// Creates an events watcher for the `/events` WebSocket endpoint under the provided base URL.
-    public init(baseURL: URL, requestAdapter: RequestAdapter, dispatcher: EventDispatcher) throws {
+    public init(
+        baseURL: URL,
+        requestAdapter: RequestAdapter,
+        dispatcher: EventDispatcher,
+        serverTrustPolicy: ServerTrustPolicy = .system
+    ) throws {
         let builder = RequestBuilder.json(baseURL: baseURL, encoder: JSONEncoder())
         let url = try builder.url(for: EventsApi.feed()).wsURL
-        self.init(request: URLRequest(url: url), requestAdapter: requestAdapter, dispatcher: dispatcher)
+        self.init(
+            request: URLRequest(url: url),
+            requestAdapter: requestAdapter,
+            dispatcher: dispatcher,
+            serverTrustPolicy: serverTrustPolicy
+        )
     }
 
     /// Creates an events watcher around a configured WebSocket request.
-    public init(request: URLRequest, requestAdapter: RequestAdapter, dispatcher: EventDispatcher) {
+    public init(
+        request: URLRequest,
+        requestAdapter: RequestAdapter,
+        dispatcher: EventDispatcher,
+        serverTrustPolicy: ServerTrustPolicy = .system
+    ) {
         let logger = Logger(label: "ws.events")
         self.dispatcher = dispatcher
-        
-        var configuration = WebSocket.Configuration.default
-        configuration.serverTrustPolicy = .system
+
+        var configuration = WebSocket.Configuration.checked
+        configuration.serverTrustPolicy = serverTrustPolicy
         configuration.connectionHandshakeTimeout = 25
-        
-        self.socket = WebSocket(request: request, configuration: .checked, requestAdapter: requestAdapter, logger: logger)
+
+        self.socket = WebSocket(
+            request: request,
+            configuration: configuration,
+            requestAdapter: requestAdapter,
+            logger: logger
+        )
     }
 
     deinit {

@@ -25,6 +25,7 @@ let package = Package(
         .package(url: "https://github.com/avgx/JSONValue.git", from: "1.0.1"),
         .package(url: "https://github.com/avgx/SafeEnum.git", from: "1.0.0"),
         .package(url: "https://github.com/avgx/Get.git", from: "6.0.0"),
+        .package(url: "https://github.com/avgx/SSLPinning.git", from: "2.0.0"),
     ],
     targets: [
         .target(
@@ -37,6 +38,7 @@ let package = Package(
                 .product(name: "SafeEnum", package: "SafeEnum"),
                 .product(name: "HTTP", package: "Get"),
                 .product(name: "WS", package: "Get"),
+                .product(name: "SSLPinning", package: "SSLPinning"),
             ]
         ),
         .testTarget(
