@@ -27,6 +27,7 @@ let package = Package(
         .package(url: "https://github.com/avgx/Get.git", from: "6.0.0"),
         .package(url: "https://github.com/avgx/SSLPinning.git", from: "2.0.0"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
+        .package(url: "https://github.com/avgx/DebugThings.git", from: "2.0.0"),
     ],
     targets: [
         .target(
@@ -41,6 +42,7 @@ let package = Package(
                 .product(name: "WS", package: "Get"),
                 .product(name: "SSLPinning", package: "SSLPinning"),
                 .product(name: "Logging", package: "swift-log"),
+                .product(name: "DebugThings", package: "DebugThings"),
             ]
         ),
         .testTarget(

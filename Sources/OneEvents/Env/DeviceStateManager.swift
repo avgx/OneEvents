@@ -1,8 +1,9 @@
+import DebugThings
 import SwiftUI
 
 /// Observable store for device states keyed by access point.
 @MainActor
-public final class DeviceStateManager: ObservableObject {
+public final class DeviceStateManager: ObservableObject, Loggable {
     /// Latest arm state by camera access point.
     @Published public private(set) var states: [AccessPoint: DeviceState?] = [:]
 
@@ -27,6 +28,9 @@ public final class DeviceStateManager: ObservableObject {
     }
 
     private func apply(_ update: DeviceStateChangedEvent) {
-        states[update.name] = update.state
+        let newValue = update.state
+        guard states[update.name] != newValue else { return }
+        states[update.name] = newValue
+        logger.debug("\(update.name) device=\(newValue)")
     }
 }

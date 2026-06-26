@@ -1,8 +1,9 @@
+import DebugThings
 import SwiftUI
 
 /// Observable store for camera record states keyed by access point.
 @MainActor
-public final class CameraRecordStateManager: ObservableObject {
+public final class CameraRecordStateManager: ObservableObject, Loggable {
     /// Latest arm state by camera access point.
     @Published public private(set) var states: [AccessPoint: ArchiveRecordState?] = [:]
 
@@ -27,6 +28,9 @@ public final class CameraRecordStateManager: ObservableObject {
     }
 
     private func apply(_ update: CameraRecordStateEvent) {
-        states[update.source] = update.state.value
+        let newValue = update.state.value
+        guard states[update.source] != newValue else { return }
+        states[update.source] = newValue
+        logger.debug("\(update.source) record=\(update.state)")
     }
 }
