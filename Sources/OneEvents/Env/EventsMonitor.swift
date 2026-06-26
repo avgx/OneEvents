@@ -65,20 +65,28 @@ public final class EventsMonitor: ObservableObject {
     private let watcher: EventsWatcher
     private let dispatcher: EventDispatcher
     private let snapshotIntervalNanoseconds: UInt64
-    private let logger = Logger(label: "events.monitor")
+    private let logger: Logger
     private var tasks: [Task<Void, Never>] = []
+    private var lastLoggedTransport: (sent: UInt64, received: UInt64, state: String)?
 
     /// Creates an events monitor for a watcher and dispatcher pair.
     public init(
         watcher: EventsWatcher,
         dispatcher: EventDispatcher,
+        logger: Logger? = nil,
         snapshotIntervalNanoseconds: UInt64 = 1_000_000_000,
         initialState: EventsSessionState = EventsSessionState()
     ) {
         self.watcher = watcher
         self.dispatcher = dispatcher
+        self.logger = Self.resolvedLogger(logger, label: "events.monitor")
         self.snapshotIntervalNanoseconds = snapshotIntervalNanoseconds
         self.state = initialState
+    }
+
+    private static func resolvedLogger(_ logger: Logger?, label: String) -> Logger {
+        if let logger { return logger }
+        return Logger(label: label, factory: { _ in SwiftLogNoOpLogHandler() })
     }
 
     deinit {
@@ -141,7 +149,11 @@ public final class EventsMonitor: ObservableObject {
         state.isConnected = Self.isConnected(snapshot.state)
         state.bytesSent = snapshot.sent
         state.bytesReceived = snapshot.received
-        logger.debug("transport sent=\(snapshot.sent) received=\(snapshot.received) state=\(String(describing: snapshot.state))")
+        let transportKey = (snapshot.sent, snapshot.received, String(describing: snapshot.state))
+        if lastLoggedTransport.map({ $0 != transportKey }) ?? true {
+            lastLoggedTransport = transportKey
+            logger.debug("transport sent=\(snapshot.sent) received=\(snapshot.received) state=\(String(describing: snapshot.state))")
+        }
     }
 
     private func recordEvent(type: String) {

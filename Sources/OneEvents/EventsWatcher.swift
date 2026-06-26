@@ -25,7 +25,8 @@ public actor EventsWatcher {
         baseURL: URL,
         requestAdapter: RequestAdapter,
         dispatcher: EventDispatcher,
-        serverTrustPolicy: ServerTrustPolicy = .system
+        serverTrustPolicy: ServerTrustPolicy = .system,
+        logger: Logger? = nil
     ) throws {
         let builder = RequestBuilder.json(baseURL: baseURL, encoder: JSONEncoder())
         let url = try builder.url(for: EventsApi.feed()).wsURL
@@ -33,7 +34,8 @@ public actor EventsWatcher {
             request: URLRequest(url: url),
             requestAdapter: requestAdapter,
             dispatcher: dispatcher,
-            serverTrustPolicy: serverTrustPolicy
+            serverTrustPolicy: serverTrustPolicy,
+            logger: logger
         )
     }
 
@@ -42,9 +44,9 @@ public actor EventsWatcher {
         request: URLRequest,
         requestAdapter: RequestAdapter,
         dispatcher: EventDispatcher,
-        serverTrustPolicy: ServerTrustPolicy = .system
+        serverTrustPolicy: ServerTrustPolicy = .system,
+        logger: Logger? = nil
     ) {
-        let logger = Logger(label: "ws.events")
         self.dispatcher = dispatcher
 
         var configuration = WebSocket.Configuration.checked
@@ -55,8 +57,13 @@ public actor EventsWatcher {
             request: request,
             configuration: configuration,
             requestAdapter: requestAdapter,
-            logger: logger
+            logger: Self.resolvedLogger(logger, label: "ws.events")
         )
+    }
+
+    private static func resolvedLogger(_ logger: Logger?, label: String) -> Logger {
+        if let logger { return logger }
+        return Logger(label: label, factory: { _ in SwiftLogNoOpLogHandler() })
     }
 
     deinit {
