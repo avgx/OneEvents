@@ -15,8 +15,8 @@ public final class DeviceStateManager: ObservableObject {
         task?.cancel()
     }
 
-    /// Binds this manager to camera arm updates published by the dispatcher.
-    public func bindCameraRecordStateChannel(_ dispatcher: EventDispatcher) {
+    /// Binds this manager to device state updates published by the dispatcher.
+    public func bindDeviceStateChannel(_ dispatcher: EventDispatcher) {
         task?.cancel()
         task = Task { @MainActor in
             let stream = await dispatcher.deviceStateEvents()
