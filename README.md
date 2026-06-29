@@ -17,7 +17,14 @@ package without adding another envelope layer.
 
 ```swift
 let dispatcher = EventDispatcher()
-let watcher = try EventsWatcher(baseURL: baseURL, requestAdapter: adapter, dispatcher: dispatcher)
+let builder = RequestBuilder.json(baseURL: baseURL, encoder: JSONEncoder())
+let url = try builder.url(for: EventsApi.feed()).wsURL
+let socket = WebSocket(
+    request: URLRequest(url: url),
+    configuration: EventsWatcher.feedConfiguration,
+    requestAdapter: adapter
+)
+let watcher = EventsWatcher(socket: socket, dispatcher: dispatcher)
 let monitor = EventsMonitor(watcher: watcher, dispatcher: dispatcher)
 let feed = EventFeed(capacity: 100)
 
@@ -43,7 +50,14 @@ request adapter from the account layer:
 let dispatcher = EventDispatcher()
 let baseURL = await runtime.account.endpoint.url
 let adapter = /* request adapter from AccountRuntime/auth layer */
-let watcher = try EventsWatcher(baseURL: baseURL, requestAdapter: adapter, dispatcher: dispatcher)
+let builder = RequestBuilder.json(baseURL: baseURL, encoder: JSONEncoder())
+let url = try builder.url(for: EventsApi.feed()).wsURL
+let socket = await runtime.makeWebSocket(
+    request: URLRequest(url: url),
+    configuration: EventsWatcher.feedConfiguration,
+    requestAdapter: adapter
+)
+let watcher = EventsWatcher(socket: socket, dispatcher: dispatcher)
 
 let monitor = EventsMonitor(watcher: watcher, dispatcher: dispatcher)
 let feed = EventFeed(capacity: 100)
@@ -58,7 +72,8 @@ subscriptions while inactive and replays them after the next connection.
 
 ## Integration Test
 
-The long-read WebSocket integration test is opt-in. Rename `.env.sample` to `.env` and put values in.
+The long-read WebSocket integration test is opt-in. Rename `.env.example` to `.env` and put values in.
+Use `EVENTS_WS_URL` for a ready `ws`/`wss` feed URL, or `EVENTS_BASE_URL` to derive `…/events` manually.
 
 Without these values, `swift test` runs the offline tests and reports that the integration test is
 not configured.

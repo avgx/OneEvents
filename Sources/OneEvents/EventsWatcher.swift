@@ -1,11 +1,6 @@
 import Foundation
-import HTTP
 import WS
-import Logging
 import OneWireFormat
-import RequestResponse
-import URLKit
-import SSLPinning
 
 /// Client-side wrapper for the One `/events` WebSocket feed.
 public actor EventsWatcher {
@@ -20,50 +15,17 @@ public actor EventsWatcher {
     private var connectTask: Task<Void, Never>?
     private var shouldBeActive = false
 
-    /// Creates an events watcher for the `/events` WebSocket endpoint under the provided base URL.
-    public init(
-        baseURL: URL,
-        requestAdapter: RequestAdapter,
-        dispatcher: EventDispatcher,
-        serverTrustPolicy: ServerTrustPolicy = .system,
-        logger: Logger? = nil
-    ) throws {
-        let builder = RequestBuilder.json(baseURL: baseURL, encoder: JSONEncoder())
-        let url = try builder.url(for: EventsApi.feed()).wsURL
-        self.init(
-            request: URLRequest(url: url),
-            requestAdapter: requestAdapter,
-            dispatcher: dispatcher,
-            serverTrustPolicy: serverTrustPolicy,
-            logger: logger
-        )
-    }
-
-    /// Creates an events watcher around a configured WebSocket request.
-    public init(
-        request: URLRequest,
-        requestAdapter: RequestAdapter,
-        dispatcher: EventDispatcher,
-        serverTrustPolicy: ServerTrustPolicy = .system,
-        logger: Logger? = nil
-    ) {
+    /// Creates an events watcher around a WebSocket built by the account runtime.
+    public init(socket: WebSocket, dispatcher: EventDispatcher) {
+        self.socket = socket
         self.dispatcher = dispatcher
-
-        var configuration = WebSocket.Configuration.checked
-        configuration.serverTrustPolicy = serverTrustPolicy
-        configuration.connectionHandshakeTimeout = 25
-
-        self.socket = WebSocket(
-            request: request,
-            configuration: configuration,
-            requestAdapter: requestAdapter,
-            logger: Self.resolvedLogger(logger, label: "ws.events")
-        )
     }
 
-    private static func resolvedLogger(_ logger: Logger?, label: String) -> Logger {
-        if let logger { return logger }
-        return Logger(label: label, factory: { _ in SwiftLogNoOpLogHandler() })
+    /// Default WebSocket configuration for the `/events` feed.
+    public static var feedConfiguration: WebSocket.Configuration {
+        var configuration = WebSocket.Configuration.checked
+        configuration.connectionHandshakeTimeout = 25
+        return configuration
     }
 
     deinit {

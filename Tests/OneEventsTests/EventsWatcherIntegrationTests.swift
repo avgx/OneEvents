@@ -5,23 +5,24 @@ import Testing
 import WS
 @testable import OneEvents
 
-/// Requires `EVENTS_BASE_URL`, `EVENTS_USER`, and `EVENTS_PASSWORD` in `.env` or the process environment.
+/// Requires `EVENTS_WS_URL` (or `EVENTS_BASE_URL`), plus `EVENTS_USER` and `EVENTS_PASSWORD` in `.env` or the process environment.
 @Test func eventsWatcherLongReadIntegration() async throws {
     let env = DotEnv.merged
-    guard let urlString = env["EVENTS_BASE_URL"], !urlString.isEmpty, let baseURL = URL(string: urlString),
-          let user = env["EVENTS_USER"], !user.isEmpty,
-          let password = env["EVENTS_PASSWORD"], !password.isEmpty
+    guard let user = env["EVENTS_USER"], !user.isEmpty,
+          let password = env["EVENTS_PASSWORD"], !password.isEmpty,
+          let wsUrlString = env["EVENTS_WS_URL"], !wsUrlString.isEmpty, let url = URL(string: wsUrlString)
     else {
         return
     }
 
     let readSeconds = UInt64(env["EVENTS_READ_SECONDS"].flatMap(Int.init) ?? 30)
     let dispatcher = EventDispatcher()
-    let watcher = try EventsWatcher(
-        baseURL: baseURL,
-        requestAdapter: FixedAuthInterceptor(user: user, password: password),
-        dispatcher: dispatcher
+    let socket = WebSocket(
+        request: URLRequest(url: url),
+        configuration: EventsWatcher.feedConfiguration,
+        requestAdapter: FixedAuthInterceptor(user: user, password: password)
     )
+    let watcher = EventsWatcher(socket: socket, dispatcher: dispatcher)
     defer {
         Task {
             await watcher.stop()
