@@ -2,7 +2,7 @@ import Foundation
 import OneWireFormat
 
 /// Detector event emitted as `detector_event`.
-public struct DetectorEvent: Decodable, Sendable, Identifiable, Equatable {
+public struct DetectorEvent: Codable, Sendable, Identifiable, Equatable {
     /// Detector event phase values used by the WebSocket feed.
     public enum Phase: Int, Codable, Sendable, Hashable {
         case happened = 0
