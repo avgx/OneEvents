@@ -27,6 +27,13 @@ public final class CameraArmManager: ObservableObject, Loggable {
         }
     }
 
+    /// Seeds initial arm states from domain camera config (`Camera.armed`) before WS events arrive.
+    public func seedInitialStates(_ seeds: [AccessPoint: CameraArmState]) {
+        for (accessPoint, state) in seeds where states[accessPoint] == nil {
+            states[accessPoint] = state
+        }
+    }
+
     private func apply(_ update: CameraArmStateEvent) {
         let newValue = update.state.value
         guard states[update.source] != newValue else { return }
