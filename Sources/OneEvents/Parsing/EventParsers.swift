@@ -40,6 +40,18 @@ public enum EventParsers {
         return try decoder.decode(ObjectActivatedEvent.self, from: event.raw)
     }
 
+    /// Decodes an alert event when the wire event type matches.
+    public static func alert(_ event: OneWireFormat.WSString.Event, decoder: JSONDecoder = JSONDecoder()) throws -> AlertEvent? {
+        guard event.eventType == .alert else { return nil }
+        return try decoder.decode(AlertEvent.self, from: event.raw)
+    }
+
+    /// Decodes an alert-state event when the wire event type matches.
+    public static func alertState(_ event: OneWireFormat.WSString.Event, decoder: JSONDecoder = JSONDecoder()) throws -> AlertStateEvent? {
+        guard event.eventType == .alertState else { return nil }
+        return try decoder.decode(AlertStateEvent.self, from: event.raw)
+    }
+
     /// Decodes an unknown wire event as structured JSON.
     public static func unknownJSON(_ event: OneWireFormat.WSString.Event, decoder: JSONDecoder = JSONDecoder()) throws -> JSONValue? {
         guard event.eventType == nil else { return nil }

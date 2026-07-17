@@ -11,6 +11,8 @@ public actor EventDispatcher {
     private let cameraRecordStateHub = Hub<CameraRecordStateEvent>()
     private let cameraListUpdateHub = Hub<CameraListUpdateEvent>()
     private let objectActivatedHub = Hub<ObjectActivatedEvent>()
+    private let alertHub = Hub<AlertEvent>()
+    private let alertStateHub = Hub<AlertStateEvent>()
     private let unknownHub = Hub<JSONValue>()
     private let decodingIssuesHub = Hub<EventDecodingIssue>()
 
@@ -52,6 +54,16 @@ public actor EventDispatcher {
     /// Subscribes to object activation events.
     public func objectActivatedEvents() async -> AsyncStream<ObjectActivatedEvent> {
         await objectActivatedHub.subscribe()
+    }
+
+    /// Subscribes to live alert events.
+    public func alertEvents() async -> AsyncStream<AlertEvent> {
+        await alertHub.subscribe()
+    }
+
+    /// Subscribes to alert-state updates.
+    public func alertStateEvents() async -> AsyncStream<AlertStateEvent> {
+        await alertStateHub.subscribe()
     }
 
     /// Subscribes to unknown events decoded as structured JSON.
@@ -118,6 +130,14 @@ public actor EventDispatcher {
         case .objectActivated:
             if let objectActivated = try EventParsers.objectActivated(event) {
                 await objectActivatedHub.publish(objectActivated)
+            }
+        case .alert:
+            if let alert = try EventParsers.alert(event) {
+                await alertHub.publish(alert)
+            }
+        case .alertState:
+            if let alertState = try EventParsers.alertState(event) {
+                await alertStateHub.publish(alertState)
             }
         case nil:
             if let payload = try EventParsers.unknownJSON(event) {

@@ -54,6 +54,56 @@ private let objectActivatedPacket = """
 }
 """
 
+private let alertPacket = """
+{
+  "objects": [
+    {
+      "type": "alert",
+      "archive": "hosts/DEMOSERVER/MultimediaStorage.Alert/MultimediaStorage",
+      "id": "F5A0401B-FC2D-4384-83DE-CA5E4139EBC0",
+      "initiator": "9ffabb81-eae4-45d8-a2d0-356ce4e7aaf5",
+      "initiator_type": "macro",
+      "phase": "started",
+      "source": "hosts/DEMOSERVER/DeviceIpint.5/SourceEndpoint.video:0:0",
+      "state_macro": "raise_alert",
+      "states": [
+        {
+          "type": "alert_state",
+          "alert_id": "F5A0401B-FC2D-4384-83DE-CA5E4139EBC0",
+          "id": "A63C73E2-12F9-406D-8E64-E7E018B6B4D8",
+          "name": "hosts/DEMOSERVER/DeviceIpint.5/SourceEndpoint.video:0:0",
+          "reviewer": "",
+          "reviewer_type": "system",
+          "severity": "unclassified",
+          "state": "reaction",
+          "priority": "AP_HIGH"
+        }
+      ],
+      "timestamp": "20240801T095025.910497"
+    }
+  ]
+}
+"""
+
+private let alertStatePacket = """
+{
+  "objects": [
+    {
+      "type": "alert_state",
+      "alert_id": "F5A0401B-FC2D-4384-83DE-CA5E4139EBC0",
+      "id": "e21cc8af-5386-4e50-a1e0-dbb3602bb7e3",
+      "message": "",
+      "name": "hosts/DEMOSERVER/DeviceIpint.5/SourceEndpoint.video:0:0",
+      "reviewer": "root",
+      "reviewer_type": "user",
+      "severity": "alarm",
+      "state": "closed",
+      "priority": "AP_MAXIMUM"
+    }
+  ]
+}
+"""
+
 private let unknownPacket = """
 {
   "objects": [
@@ -81,8 +131,48 @@ private let unknownPacket = """
     let activation = try #require(try EventParsers.objectActivated(objectActivated))
     #expect(activation.isActivated)
     #expect(activation.objectIdExt.friendlyName == "Camera 1")
+
+    let alertWire = try #require(try decodeFirst(alertPacket))
+    let alert = try #require(try EventParsers.alert(alertWire))
+    #expect(alert.id == "F5A0401B-FC2D-4384-83DE-CA5E4139EBC0")
+    #expect(alert.initiatorType.value == .macro)
+    #expect(alert.states.count == 1)
+    #expect(alert.states[0].state.value == .reaction)
+    #expect(alert.states[0].priority?.value == .high)
+
+    let alertStateWire = try #require(try decodeFirst(alertStatePacket))
+    let alertState = try #require(try EventParsers.alertState(alertStateWire))
+    #expect(alertState.alertId == "F5A0401B-FC2D-4384-83DE-CA5E4139EBC0")
+    #expect(alertState.state.value == .closed)
+    #expect(alertState.severity.value == .alarm)
+    #expect(alertState.reviewerType.value == .user)
 }
 
+@Test func dispatcherPublishesAlertHubs() async throws {
+    let dispatcher = EventDispatcher()
+    let alertStream = await dispatcher.alertEvents()
+    let stateStream = await dispatcher.alertStateEvents()
+
+    let alertWire = try #require(try decodeFirst(alertPacket))
+    let stateWire = try #require(try decodeFirst(alertStatePacket))
+
+    async let firstAlert: AlertEvent? = {
+        for await value in alertStream { return value }
+        return nil
+    }()
+    async let firstState: AlertStateEvent? = {
+        for await value in stateStream { return value }
+        return nil
+    }()
+
+    await dispatcher.dispatch(alertWire)
+    await dispatcher.dispatch(stateWire)
+
+    let alert = try #require(await firstAlert)
+    let state = try #require(await firstState)
+    #expect(alert.id == "F5A0401B-FC2D-4384-83DE-CA5E4139EBC0")
+    #expect(state.state.value == .closed)
+}
 @Test func unknownParserKeepsStructuredJSON() throws {
     let event = try #require(try decodeFirst(unknownPacket))
     let value = try EventParsers.unknownJSON(event)
