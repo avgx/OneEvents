@@ -98,7 +98,8 @@ private let alertStatePacket = """
       "reviewer_type": "user",
       "severity": "alarm",
       "state": "closed",
-      "priority": "AP_MAXIMUM"
+      "priority": "AP_MAXIMUM",
+      "state_time": "20260718T122843.741539"
     }
   ]
 }
@@ -146,6 +147,8 @@ private let unknownPacket = """
     #expect(alertState.state.value == .closed)
     #expect(alertState.severity.value == .alarm)
     #expect(alertState.reviewerType.value == .user)
+    #expect(alertState.stateTimeRaw == "20260718T122843.741539")
+    #expect(alertState.stateTime != nil)
 }
 
 @Test func dispatcherPublishesAlertHubs() async throws {
@@ -219,7 +222,7 @@ private let unknownPacket = """
             eventType: "MotionDetected",
             source: "camera-1",
             state: DetectorEvent.Phase.happened.rawValue,
-            timestamp: "20250114T103757.359000",
+            timestampRaw: "20250114T103757.359000",
             rectangles: nil,
             plateFull: nil,
             listedInfo: nil
@@ -232,7 +235,7 @@ private let unknownPacket = """
             eventType: "MotionDetected",
             source: "camera-1",
             state: DetectorEvent.Phase.ended.rawValue,
-            timestamp: "20250114T103758.359000",
+            timestampRaw: "20250114T103758.359000",
             rectangles: nil,
             plateFull: nil,
             listedInfo: nil
@@ -245,7 +248,7 @@ private let unknownPacket = """
             eventType: "MotionDetected",
             source: "camera-1",
             state: DetectorEvent.Phase.began.rawValue,
-            timestamp: "20250114T103759.359000",
+            timestampRaw: "20250114T103759.359000",
             rectangles: nil,
             plateFull: nil,
             listedInfo: nil

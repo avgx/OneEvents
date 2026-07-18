@@ -41,7 +41,12 @@ public struct AlertEvent: Codable, Sendable, Equatable, Identifiable {
     public let states: [AlertStateEvent]
 
     /// Server timestamp in ASIP format.
-    public let timestamp: String
+    public let timestampRaw: String
+
+    /// Parsed ``timestampRaw`` (`.distantPast` if unparsable).
+    public var timestamp: Date {
+        WireTimestampParsing.date(from: timestampRaw)
+    }
 
     /// Optional detector event reference.
     public let event: AlertEventRef?
@@ -57,7 +62,7 @@ public struct AlertEvent: Codable, Sendable, Equatable, Identifiable {
         case stateUser = "state_user"
         case stateMacro = "state_macro"
         case states
-        case timestamp
+        case timestampRaw = "timestamp"
         case event
     }
 }

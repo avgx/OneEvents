@@ -65,6 +65,14 @@ public struct AlertStateEvent: Codable, Sendable, Equatable, Identifiable {
     /// Priority when present.
     public let priority: SafeEnum<AlertWirePriority>?
 
+    /// Optional wire `state_time` when present.
+    public let stateTimeRaw: String?
+
+    /// Parsed ``stateTimeRaw``.
+    public var stateTime: Date? {
+        WireTimestampParsing.date(from: stateTimeRaw)
+    }
+
     enum CodingKeys: String, CodingKey {
         case id
         case type
@@ -76,5 +84,6 @@ public struct AlertStateEvent: Codable, Sendable, Equatable, Identifiable {
         case severity
         case state
         case priority
+        case stateTimeRaw = "state_time"
     }
 }

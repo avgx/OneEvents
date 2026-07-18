@@ -16,7 +16,19 @@ public struct CameraArmStateEvent: Codable, Sendable, Equatable {
     /// Camera access point.
     public let source: AccessPoint
 
-    /// Server timestamp in ASIP format.
-    public let timestamp: String?
-}
+    /// Server timestamp in ASIP format when present.
+    public let timestampRaw: String?
 
+    /// Parsed ``timestampRaw``.
+    public var timestamp: Date? {
+        WireTimestampParsing.date(from: timestampRaw)
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case type
+        case state
+        case source
+        case timestampRaw = "timestamp"
+    }
+}

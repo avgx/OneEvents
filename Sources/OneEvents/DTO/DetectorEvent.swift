@@ -27,7 +27,12 @@ public struct DetectorEvent: Codable, Sendable, Identifiable, Equatable {
     public let state: Int?
 
     /// Server timestamp in ASIP format.
-    public let timestamp: String
+    public let timestampRaw: String
+
+    /// Parsed ``timestampRaw`` (`.distantPast` if unparsable).
+    public var timestamp: Date {
+        WireTimestampParsing.date(from: timestampRaw)
+    }
 
     /// Detection rectangles in normalized coordinates.
     public let rectangles: [EventRectangle]?
@@ -49,7 +54,7 @@ public struct DetectorEvent: Codable, Sendable, Identifiable, Equatable {
         case eventType = "event_type"
         case source
         case state
-        case timestamp
+        case timestampRaw = "timestamp"
         case rectangles
         case plateFull = "plate_full"
         case listedInfo
@@ -76,8 +81,13 @@ public struct ListedInfo: Codable, Sendable, Equatable {
     /// Detailed list matches returned by some server versions.
     public let listsInfo: [Detail]?
 
-    /// Match timestamp for list-based events.
-    public let matchedEventTime: String?
+    /// Match timestamp for list-based events (ASIP wire).
+    public let matchedEventTimeRaw: String?
+
+    /// Parsed ``matchedEventTimeRaw``.
+    public var matchedEventTime: Date? {
+        WireTimestampParsing.date(from: matchedEventTimeRaw)
+    }
 
     enum CodingKeys: String, CodingKey {
         case itemId
@@ -86,7 +96,7 @@ public struct ListedInfo: Codable, Sendable, Equatable {
         case listName
         case plate
         case listsInfo = "lists_Info"
-        case matchedEventTime = "matched_event_time"
+        case matchedEventTimeRaw = "matched_event_time"
     }
 
     /// Single matched list descriptor.
@@ -116,4 +126,3 @@ public struct EventRectangle: Codable, Sendable, Equatable {
     /// Top coordinate in normalized image space.
     public let top: Double?
 }
-
