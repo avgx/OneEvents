@@ -68,6 +68,11 @@ public final class EventsMonitor: ObservableObject {
     private let logger: Logger
     private var tasks: [Task<Void, Never>] = []
     private var lastLoggedTransport: (sent: UInt64, received: UInt64, state: String)?
+    private var observedEventsReceived = 0
+    private var observedEventsByType: [String: Int] = [:]
+    private var observedLastEventAt: Date?
+    private var pendingEventCount = 0
+    private var pendingEventsByType: [String: Int] = [:]
 
     /// Creates an events monitor for a watcher and dispatcher pair.
     public init(
@@ -139,39 +144,76 @@ public final class EventsMonitor: ObservableObject {
             task.cancel()
         }
         tasks.removeAll()
+        publishEventCounters()
+        flushEventSummary()
         logger.info("monitoring stopped")
     }
 
     /// Refreshes transport byte counters and connection state immediately.
     public func refreshSnapshot() async {
         let snapshot = await watcher.transportSnapshot()
-        state.connectionState = String(describing: snapshot.state)
-        state.isConnected = Self.isConnected(snapshot.state)
-        state.bytesSent = snapshot.sent
-        state.bytesReceived = snapshot.received
+        var next = state
+        next.connectionState = String(describing: snapshot.state)
+        next.isConnected = Self.isConnected(snapshot.state)
+        next.bytesSent = snapshot.sent
+        next.bytesReceived = snapshot.received
+        next.eventsReceived = observedEventsReceived
+        next.eventsByType = observedEventsByType
+        next.lastEventAt = observedLastEventAt
+        state = next
+
         let transportKey = (snapshot.sent, snapshot.received, String(describing: snapshot.state))
         if lastLoggedTransport.map({ $0 != transportKey }) ?? true {
             lastLoggedTransport = transportKey
             logger.debug("transport sent=\(snapshot.sent) received=\(snapshot.received) state=\(String(describing: snapshot.state))")
         }
+        flushEventSummary()
     }
 
     private func recordEvent(type: String) {
-        state.eventsReceived += 1
-        state.eventsByType[type, default: 0] += 1
-        state.lastEventAt = Date()
-        logger.debug("event type=\(type) total=\(self.state.eventsReceived)")
+        observedEventsReceived += 1
+        observedEventsByType[type, default: 0] += 1
+        observedLastEventAt = Date()
+        pendingEventCount += 1
+        pendingEventsByType[type, default: 0] += 1
+    }
+
+    private func flushEventSummary() {
+        guard pendingEventCount > 0 else { return }
+
+        let count = pendingEventCount
+        let byType = pendingEventsByType
+        pendingEventCount = 0
+        pendingEventsByType.removeAll(keepingCapacity: true)
+
+        let breakdown = byType
+            .sorted { $0.key < $1.key }
+            .map { "\($0.key)=\($0.value)" }
+            .joined(separator: ", ")
+        logger.debug("events +\(count) (\(breakdown)) total=\(observedEventsReceived)")
+    }
+
+    private func publishEventCounters() {
+        var next = state
+        next.eventsReceived = observedEventsReceived
+        next.eventsByType = observedEventsByType
+        next.lastEventAt = observedLastEventAt
+        state = next
     }
 
     private func recordIssue(_ issue: EventDecodingIssue) {
-        state.decodeErrors += 1
-        state.lastError = "\(issue.type): \(issue.message)"
+        var next = state
+        next.decodeErrors += 1
+        next.lastError = "\(issue.type): \(issue.message)"
+        state = next
         logger.error("decode \(issue.type): \(issue.message)")
     }
 
     private func recordConnectionState(_ connectionState: WebSocket.State) {
-        state.connectionState = String(describing: connectionState)
-        state.isConnected = Self.isConnected(connectionState)
+        var next = state
+        next.connectionState = String(describing: connectionState)
+        next.isConnected = Self.isConnected(connectionState)
+        state = next
         logger.info("WS state: \(String(describing: connectionState))")
     }
 
