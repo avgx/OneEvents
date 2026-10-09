@@ -41,6 +41,12 @@ public final class CameraArmManager: ObservableObject, Loggable {
         }
     }
 
+    /// Replaces the arm state for one camera. `seedInitialStates` does not overwrite a known key.
+    public func setState(_ state: CameraArmState, for accessPoint: AccessPoint) {
+        objectWillChange.send()
+        states[accessPoint] = state
+    }
+
     private func enqueue(_ update: CameraArmStateEvent) {
         let newValue = update.state.value
         coalescer.enqueue(key: update.source, value: newValue, current: states[update.source] ?? nil)
