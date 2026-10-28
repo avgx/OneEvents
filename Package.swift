@@ -23,7 +23,7 @@ let package = Package(
         .package(url: "https://github.com/avgx/RequestResponse.git", from: "2.0.0"),
         .package(url: "https://github.com/avgx/JSONValue.git", from: "1.0.1"),
         .package(url: "https://github.com/avgx/SafeEnum.git", from: "1.0.0"),
-        .package(url: "https://github.com/avgx/Get.git", from: "6.0.0"),
+        .package(url: "https://github.com/avgx/Get.git", from: "7.0.0"),
         .package(url: "https://github.com/avgx/SSLPinning.git", from: "2.0.0"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
         .package(url: "https://github.com/avgx/DebugThings.git", from: "2.0.0"),

@@ -29,7 +29,7 @@ import WS
         }
     }
 
-    let stateStream = await watcher.connectionStateUpdates()
+    let stateStream = watcher.states
     let eventsStream = await dispatcher.events()
 
     await watcher.start()

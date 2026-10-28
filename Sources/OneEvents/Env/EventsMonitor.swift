@@ -5,7 +5,10 @@ import WS
 
 /// UI-ready snapshot of the events subsystem state.
 public struct EventsSessionState: Sendable {
-    /// Human-readable connection state reported by the WebSocket transport.
+    /// Latest WebSocket state of the feed.
+    public var link: WebSocket.State
+
+    /// Human-readable form of ``link``, for diagnostics.
     public var connectionState: String
 
     /// Whether the WebSocket is currently connected.
@@ -34,6 +37,7 @@ public struct EventsSessionState: Sendable {
 
     /// Creates an empty session state snapshot.
     public init(
+        link: WebSocket.State = .idle,
         connectionState: String = "unknown",
         isConnected: Bool = false,
         bytesSent: UInt64 = 0,
@@ -44,6 +48,7 @@ public struct EventsSessionState: Sendable {
         lastEventAt: Date? = nil,
         lastError: String? = nil
     ) {
+        self.link = link
         self.connectionState = connectionState
         self.isConnected = isConnected
         self.bytesSent = bytesSent
@@ -101,6 +106,8 @@ public final class EventsMonitor: ObservableObject {
     }
 
     /// Starts observing events, diagnostics, connection state, and transport metrics.
+    ///
+    /// The monitor becomes the only reader of `watcher.states`; call once per watcher.
     public func start() {
         guard tasks.isEmpty else { return }
         logger.info("monitoring started")
@@ -123,8 +130,7 @@ public final class EventsMonitor: ObservableObject {
 
         tasks.append(Task { [weak self] in
             guard let self else { return }
-            let stream = await watcher.connectionStateUpdates()
-            for await connectionState in stream {
+            for await connectionState in watcher.states {
                 self.recordConnectionState(connectionState)
             }
         })
@@ -153,6 +159,7 @@ public final class EventsMonitor: ObservableObject {
     public func refreshSnapshot() async {
         let snapshot = await watcher.transportSnapshot()
         var next = state
+        next.link = snapshot.state
         next.connectionState = String(describing: snapshot.state)
         next.isConnected = Self.isConnected(snapshot.state)
         next.bytesSent = snapshot.sent
@@ -211,6 +218,7 @@ public final class EventsMonitor: ObservableObject {
 
     private func recordConnectionState(_ connectionState: WebSocket.State) {
         var next = state
+        next.link = connectionState
         next.connectionState = String(describing: connectionState)
         next.isConnected = Self.isConnected(connectionState)
         state = next

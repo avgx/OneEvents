@@ -5,13 +5,10 @@ import Logging
 import OneWireFormat
 
 extension EventsWatcher {
-    /// Reads WebSocket frames and dispatches decoded event objects.
-    public func read() async {
-        let eventsStream = await socket.messages()
-        for await frame in eventsStream {
-            if Task.isCancelled {
-                break
-            }
+    /// The only reader of `socket.messages`, for the whole lifetime of the watcher: decodes frames of every
+    /// connection and dispatches event objects. Ends when the socket is shut down.
+    func read() async {
+        for await frame in socket.messages {
             guard case .string(let event) = frame else { continue }
 
             guard let data = event.data(using: .utf8) else {
